@@ -1,4 +1,5 @@
-import {getTodosPosts, createPost} from "../models/postsModel.js";
+import {createPost, getTodosPosts, updatePost} from "../models/postsModel.js";
+import gerarDescricaoComGemini from "../services/geminiService.js";
 import fs from "fs";
 
 export async function getAll(req, res) {
@@ -33,5 +34,27 @@ export async function uploadImagem(req, res) {
     } catch (error) {
         console.error(error.message);
         res.status(500).json({"Erro": "Um erro inesperado ocorreu ao tentar criar o post."});
+    }
+}
+
+export async function update(req, res) {
+    const id = req.params.id;
+    const urlImagem = `http://localhost:3000/${id}.png`;
+
+    try {
+        const imageBuffer = fs.readFileSync(`uploads/${id}.png`);
+        const descricao = await gerarDescricaoComGemini(imageBuffer);
+
+        const post = {
+            imagemUrl: urlImagem,
+            descricao: descricao,
+            alt: req.body.alt
+        };
+
+        const result = await updatePost(id, post);
+        res.status(201).json(result);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({"Erro": "Um erro inesperado ocorreu ao tentar atualizar o post."});
     }
 }
